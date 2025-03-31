@@ -1,0 +1,15 @@
+@256
+D=A
+@SP
+M=D
+(Class1.set)
+@ARG
+D=M
+@0
+A=D+A
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
