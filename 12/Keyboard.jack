@@ -1,0 +1,133 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Keyboard.jack
+
+/**
+ * A library for handling user input from the keyboard.
+ */
+class Keyboard {
+
+    /** Initializes the keyboard. */
+    function void init() {
+        return;
+    } 
+
+    /**
+     * Returns the character of the currently pressed key on the keyboard;
+     * if no key is currently pressed, returns 0.
+     *
+     * Recognizes all ASCII characters, as well as the following keys:
+     * new line = 128 = String.newline()
+     * backspace = 129 = String.backspace()
+     * left arrow = 130
+     * up arrow = 131
+     * right arrow = 132
+     * down arrow = 133
+     * home = 134
+     * End = 135
+     * page up = 136
+     * page down = 137
+     * insert = 138
+     * delete = 139
+     * ESC = 140
+     * F1 - F12 = 141 - 152
+     */
+    function char keyPressed() {
+        return Memory.peek(24576);//读取键盘内存映射地址，返回当前按下的键
+    }
+
+    /**								
+     * Waits until a key is pressed on the keyboard and released,
+     * then echoes the key to the screen, and returns the character 
+     * of the pressed key.
+     */
+    function char readChar() {
+        var char key;
+
+        //等待按键按下
+        while(keyPressed()==0){}
+
+        //获取按下的键
+        let key=keyPressed();
+
+        //将按下的键显示到屏幕
+        do Output.printChar(key);
+
+        return key;
+    }
+
+    /**								
+     * Displays the message on the screen, reads from the keyboard the entered
+     * text until a newline character is detected, echoes the text to the screen,
+     * and returns its value. Also handles user backspaces.
+     */
+function String readLine(String message) {
+    var String input;
+    var char key;
+
+    // 显示提示信息
+    do Output.printString(message);
+
+    // 初始化输入字符串
+    let input = String.new(80);
+
+    // 循环读取字符，直到检测到换行符
+    while (true) {
+        let key = Keyboard.readChar();
+
+        if (key == 128) { // 检测到换行符
+            return input;
+        }
+
+        if (key == 129) { // 检测到退格键
+            if (input.length() > 0) {
+                do input.backSpace();
+                do Output.backSpace();
+            }
+        }
+
+        if ((key != 128) & (key != 129)) { // 其他字符
+            do input.appendChar(key);
+        }
+    }
+}
+
+    /**								
+     * Displays the message on the screen, reads from the keyboard the entered
+     * text until a newline character is detected, echoes the text to the screen,
+     * and returns its integer value (until the first non-digit character in the
+     * entered text is detected). Also handles user backspaces. 
+     */
+function int readInt(String message) {
+        var String input;
+    var char key;
+
+    // 显示提示信息
+    do Output.printString(message);
+
+    // 初始化输入字符串
+    let input = String.new(80);
+
+    // 循环读取字符，直到检测到换行符
+    while (true) {
+        let key = Keyboard.readChar();
+
+        if (key == 128) { // 检测到换行符
+            return input.intValue();
+        }
+
+        if (key == 129) { // 检测到退格键
+            if (input.length() > 0) {
+                do input.backSpace();
+                do Output.backSpace();
+            }
+        }
+
+        if ((key >= 48) & (key <= 57)) { // 检测到数字字符
+            do input.appendChar(key);
+        }
+    }
+}
+
+}

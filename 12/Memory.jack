@@ -1,0 +1,112 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+class Memory {
+    static Array memory;
+    static Array memoryBottom;
+
+    static int heapBase; // 堆的起始地址，初始化为 2048
+    static int heapBottom; // 堆的结束地址，初始化为 16384
+
+    static Array freeList; // 空闲内存块的链表，用于管理可用的内存块
+
+    static int LENGTH; // 表示内存块的长度字段
+    static int NEXT; // 表示指向下一个内存块的指针字段
+
+    static int ALLOC_LENGTH; // 表示分配块的长度字段
+
+    /** Initializes the class. */
+    function void init() {
+        let memory=0;//内存基址
+
+        let heapBase=2048;//堆的起始地址
+        let heapBottom=16384;//堆的结束地址
+
+        let freeList=heapBase;//初始化空闲链表的起始地址为堆的起始地址
+        let LENGTH=0;//链表节点的第一个字段表示块的长度
+        let NEXT=1;//链表节点的第二个字段表示指向下一个块的指针
+        let freeList[LENGTH]=heapBottom-heapBase;//设置第一个空闲块的长度为堆的总大小（16384-2048）
+        let freeList[NEXT]=null;//第一个空闲块的下一个指针为空
+
+        let ALLOC_LENGTH=-1;//分配块的长度字段存储在块的索引-1位置
+
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+        return arm[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+        let arm[address]=value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. */
+    function int alloc(int size) {
+        var int current;
+        var int previous;
+        var int block;
+
+        let current=freeList;
+        let previous=null;
+
+        //遍历freeList，寻找第一个满足条件的块(first-fit)
+        while(current!=null){
+            if(current[LENGTH]>=size+2){//块大小必须满足size+2
+                let block =current;//保存当前块的起始地址
+
+                if(current[LENGTH]==size+2){
+                    //完全匹配，移除该块
+                    if(previous==null){
+                        let freeList=current[NEXT];
+                    }else{
+                        let previous[NEXT]=current[NEXT];
+                    }
+                }else{
+                    //部分匹配，调整当前块的大小
+                    let current[LENGTH]=current[LENGTH]-(size+2);
+                    let block=current+current[LENGTH];//分配的块地址
+                }
+
+                //设置分配块的长度字段
+                let block[ALLOC_LENGTH]=size;
+
+                //返回分配块的起始地址（跳过管理字段）
+                return block+1;
+            }
+
+            //继续遍历下一个块
+            let previous=current;
+            let current=current[NEXT];
+        }
+        //如果没有找到合适的块，返回失败
+        return -1;
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+        var int segment;
+
+        //获取释放块的地址和大小
+        let segment=o;//块的起始地址（包括管理字段）
+        let segment[LENGTH]=o[ALLOC_LENGTH-1];//获取块的大小
+
+        //将释放的块插入到freeList的头部
+        let segment[NEXT]=freeList;
+        let freeList=segment;
+
+        return;
+    }    
+}
